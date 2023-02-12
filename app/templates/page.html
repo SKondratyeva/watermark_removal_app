@@ -1,0 +1,18 @@
+<html>
+
+<body>
+
+
+<h1>
+    Welcome to the service that removes watermarks from images!
+</h1>
+
+<form action="/submitform" method="post" enctype="multipart/form-data"><label class="custom-uploader" for="file">Upload Your File</label> <input id="file" accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps" name="image_upload" type="file" /> <button class="btn" name="submit" type="submit"> Upload File </button></form>
+
+{{data.page}}
+
+<img src="data:image/jpeg;base64, {{data.img}}" alt="Original Image">
+
+</body>
+</html>
+
