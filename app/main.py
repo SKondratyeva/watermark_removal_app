@@ -16,6 +16,12 @@ model.load_state_dict(model_dict)
 model.eval()
 templates = Jinja2Templates(directory = "templates")
 
+@app.get('/', response_class = HTMLResponse)
+async def home(request: Request):
+    data = {
+        'page':'home page'
+    }
+    return templates.TemplateResponse('page.html', {'request': request, 'data': data})
 
 # response with an HTML page when get requests is sent
 @app.get('/home', response_class = HTMLResponse)
