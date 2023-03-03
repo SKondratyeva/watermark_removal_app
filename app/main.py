@@ -7,7 +7,9 @@ import io
 import torch
 import numpy as np
 from model.unet_parts import *
+from db import Database
 
+database = Database()
 app = FastAPI()
 path_model = "model/unet.pt"
 model_dict = torch.load(path_model,  map_location=torch.device('cpu') )
@@ -22,6 +24,15 @@ async def home(request: Request):
         'page':'home page'
     }
     return templates.TemplateResponse('page.html', {'request': request, 'data': data})
+
+@app.on_event("startup")
+async def startup():
+    database.connect()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    database.disconnect()
 
 # response with an HTML page when get requests is sent
 @app.get('/home', response_class = HTMLResponse)
@@ -41,8 +52,10 @@ async def page(request: Request, page_name: str):
 
 @app.post("/submitform", response_class=HTMLResponse)
 async def handle_form(request: Request, image_upload: UploadFile = Form(...)):
+    file_name = str(image_upload.filename)
     image = await image_upload.read()
     image = Image.open(io.BytesIO(image))
+    database.write(file_name)
     image = image.resize((256, 256))
     image = image.convert('L')
     image = image.filter(ImageFilter.FIND_EDGES)

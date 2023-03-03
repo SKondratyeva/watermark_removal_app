@@ -7,6 +7,14 @@ RUN pip install pandas
 RUN pip install numpy
 RUN pip install pillow
 RUN pip install torch
+RUN pip install ormar
+RUN pip install asyncpg
+RUN pip install psycopg2-binary
+RUN pip install python-dotenv
+RUN pip install asyncpg
+RUN pip install python-dotenv
+RUN pip install pydantic
+
 
 WORKDIR /app
 COPY ./app /app
