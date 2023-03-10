@@ -1,21 +1,13 @@
-from fastapi import FastAPI, Request, File, UploadFile, Form
-from fastapi.responses import HTMLResponse, FileResponse
+import jinja2
+from fastapi import FastAPI, Request, UploadFile, Form
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-import base64
-from PIL import Image, ImageFilter
-import io
-import torch
-import numpy as np
-from model.unet_parts import *
+from huey_app.tasks import huey, predict_wm
 from db import Database
+import base64
 
 database = Database()
 app = FastAPI()
-path_model = "model/unet.pt"
-model_dict = torch.load(path_model,  map_location=torch.device('cpu') )
-model = Unet()
-model.load_state_dict(model_dict)
-model.eval()
 templates = Jinja2Templates(directory = "templates")
 
 @app.get('/', response_class = HTMLResponse)
@@ -25,14 +17,35 @@ async def home(request: Request):
     }
     return templates.TemplateResponse('page.html', {'request': request, 'data': data})
 
+
+@app.post("/submitform", response_class=HTMLResponse )
+async def handle_form(request: Request, image_upload: UploadFile = Form(...)):
+    file_name = str(image_upload.filename)
+    image = await image_upload.read()
+    database.write(file_name)
+    res = predict_wm(image)
+    res = res.get(blocking=True)
+    res = base64.b64encode(res).decode("utf-8")
+
+    data = {
+        "page": "the watermark predicted: ",
+        "img":res
+    }
+
+
+    return templates.TemplateResponse("page.html", {"request": request, "data": data})
+
+
+
 @app.on_event("startup")
 async def startup():
     database.connect()
 
-
+'''
 @app.on_event("shutdown")
 async def shutdown():
     database.disconnect()
+'''
 
 # response with an HTML page when get requests is sent
 @app.get('/home', response_class = HTMLResponse)
@@ -49,7 +62,7 @@ async def page(request: Request, page_name: str):
     }
     return templates.TemplateResponse("page.html", {"request": request, "data": data})
 
-
+'''
 @app.post("/submitform", response_class=HTMLResponse)
 async def handle_form(request: Request, image_upload: UploadFile = Form(...)):
     file_name = str(image_upload.filename)
@@ -65,7 +78,6 @@ async def handle_form(request: Request, image_upload: UploadFile = Form(...)):
   #  predicted_image = predicted_image.astype(np.uint8)
     predicted_image = Image.fromarray(predicted_image)
 
-
    # predicted_image = base64.b64encode(predicted_image).decode("utf-8")
     with io.BytesIO() as buf:
         predicted_image = predicted_image.convert('RGB')
@@ -79,3 +91,4 @@ async def handle_form(request: Request, image_upload: UploadFile = Form(...)):
 
 
     return templates.TemplateResponse("page.html", {"request": request, "data": data})
+'''

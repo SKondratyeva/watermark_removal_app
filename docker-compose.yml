@@ -5,6 +5,7 @@ services:
     build: .
     ports:
       - "8080:8888"
+
   db:
     image: postgres:latest
     environment:
@@ -14,6 +15,22 @@ services:
       - "5432:5432"
     volumes:
       - postgres-db:/data/postgres
-
+  worker:
+    build: .
+    command: ["python", "huey_consumer.py", "main.huey"]
+  redis:
+    image: "redis:alpine"
+    command: redis-server
+    ports:
+      - "6379:6379"
+    expose:
+      - "6379"
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - redis-data:/data
+      - redis-conf:/usr/local/etc/redis/redis.conf
 volumes:
   postgres-db:
+  redis-data:
+  redis-conf:
