@@ -15,6 +15,7 @@ RUN pip install python-dotenv
 RUN pip install pydantic
 RUN pip install huey
 RUN pip install redis
+RUN pip install prometheus-fastapi-instrumentator
 
 
 WORKDIR /app

@@ -1,0 +1,17 @@
+datasources:
+  - name: Prometheus
+    access: proxy
+    type: prometheus
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+
+providers:
+  - name: "Dashboard SK"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: false
+    options:
+      path: ./dashboards

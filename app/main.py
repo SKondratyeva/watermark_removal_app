@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 from huey_app.tasks import huey, predict_wm
 from db import Database
 import base64
+from prometheus_client.core import REGISTRY
 
 database = Database()
 app = FastAPI()
