@@ -1,29 +1,29 @@
 from torch.utils.data import DataLoader, Dataset
-from unet_parts import DualConvLayer, DownscaleLayerscaleLayer, UpscaleLayerscaleLayer, OutputConvLayer
+#from unet_parts import *
 #from vgg import Vgg16
 import numpy as np
-import torch, torch.nn as nn, torch.nn.functional as F
-
-import torch, torch.nn as nn, torch.nn.functional as F.optim as optim
+import torch
+import torch.nn as nn
+import torch.optim as optim
 import os
 
-import torch, torch.nn as nn, torch.nn.functional as F
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-import torch, torch.nn as nn, torch.nn.functional as F.nn.functional as F
 
-
-class WatermarkDataset(Dataset):
+class Image_and_Mask(Dataset):
     def __init__(self):
-        self.normal_transform = transforms.Compose([transforms.ToTensor()])
-        self.free_images_path = r'C:\Users\sofya\uni\diploma\CLWD\CLWD\train\Watermark_free_image'
-        self.watermarked_images_path = r'C:\Users\sofya\uni\diploma\CLWD\CLWD\train\Watermarked_image'
+        self.transform_norm = transforms.Compose([transforms.ToTensor()])
+        self.images_free_path = r'C:\Users\sofya\uni\diploma\CLWD\CLWD\train\Watermark_free_image'
+        self.images_wm_path = r'C:\Users\sofya\uni\diploma\CLWD\CLWD\train\Watermarked_image'
         self.mask_path = r'C:\Users\sofya\uni\diploma\CLWD\CLWD\train\Mask'
         self.alpha_path = r'C:\Users\sofya\uni\diploma\CLWD\CLWD\train\Alpha'
         self.wm_path = r'C:\Users\sofya\uni\diploma\CLWD\CLWD\train\Watermark'
         self.balance_path = r'C:\Users\sofya\uni\diploma\CLWD\CLWD\train\Loss_balance'
 
-        self.free_images_list = os.listdir(self.free_images_path)
-        self.watermarked_images_list = os.listdir(self.watermarked_images_path)
+        self.images_free = os.listdir(self.images_free_path)
+        self.images_wm = os.listdir(self.images_wm_path)
         self.masks = os.listdir(self.mask_path)
         self.alphas = os.listdir(self.alpha_path)
         self.wms = os.listdir(self.wm_path)
@@ -31,27 +31,27 @@ class WatermarkDataset(Dataset):
 
 
     def __len__(self):
-        # q_10 = int(len(self.free_images_list)*0.1)
-        # return len(self.free_images_list[:q_10])
-        return len(self.free_images_list)
+        # q_10 = int(len(self.images_free)*0.1)
+        # return len(self.images_free[:q_10])
+        return len(self.images_free)
 
     def __getitem__(self, i):
-        image_free = Image.open(os.path.join(self.free_images_path, self.free_images_list[i]))
-        image_wm = Image.open(os.path.join(self.watermarked_images_path, self.watermarked_images_list[i]))
+        image_free = Image.open(os.path.join(self.images_free_path, self.images_free[i]))
+        image_wm = Image.open(os.path.join(self.images_wm_path, self.images_wm[i]))
         mask = Image.open(os.path.join(self.mask_path, self.masks[i])).convert('L')
         alpha = Image.open(os.path.join(self.alpha_path, self.alphas[i]))
         wm = Image.open(os.path.join(self.wm_path, self.wms[i]))
 
         image_wm = np.array(image_wm)
-        image_free = self.normal_transform(np.array(image_free))
-        image_wm = self.normal_transform(image_wm)
-        mask = self.normal_transform(np.array(mask))
-        alpha = self.normal_transform(np.array(alpha)[:, :, 0])
-        wm = self.normal_transform(np.array(wm))
+        image_free = self.transform_norm(np.array(image_free))
+        image_wm = self.transform_norm(image_wm)
+        mask = self.transform_norm(np.array(mask))
+        alpha = self.transform_norm(np.array(alpha)[:, :, 0])
+        wm = self.transform_norm(np.array(wm))
         return image_free, image_wm, mask, wm, alpha
 
 
-class DualConvLayer(nn.Module):
+class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
 
     def __init__(self, in_channels, out_channels):
@@ -69,33 +69,33 @@ class DualConvLayer(nn.Module):
         return self.double_conv(x)
 
 
-class DownscaleLayer(nn.Module):
-    """DownscaleLayerscaling with maxpool then double conv"""
+class Down(nn.Module):
+    """Downscaling with maxpool then double conv"""
 
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
-            DualConvLayer(in_channels, out_channels)
+            DoubleConv(in_channels, out_channels)
         )
 
     def forward(self, x):
         return self.maxpool_conv(x)
 
 
-class UpscaleLayer(nn.Module):
-    """UpscaleLayerscaling then double conv"""
+class Up(nn.Module):
+    """Upscaling then double conv"""
 
     def __init__(self, in_channels, out_channels, bilinear=True):
         super().__init__()
 
         # if bilinear, use the normal convolutions to reduce the number of channels
         if bilinear:
-            self.up = nn.UpscaleLayersample(scale_factor=2, mode='bilinear', align_corners=True)
+            self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         else:
             self.up = nn.ConvTranspose2d(in_channels // 2, in_channels // 2, kernel_size=2, stride=2)
 
-        self.conv = DualConvLayer(in_channels, out_channels)
+        self.conv = DoubleConv(in_channels, out_channels)
 
     def forward(self, x1, x2):
         x1 = self.up(x1)
@@ -108,14 +108,14 @@ class UpscaleLayer(nn.Module):
                         diffY // 2, diffY - diffY // 2])
         # if you have padding issues, see
         # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
-        # https://github.com/xiaopeng-liao/Pytorch-WatermarkRemovalNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
+        # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
         x = torch.cat([x2, x1], dim=1)
         return self.conv(x)
 
 
-class OutputConvLayer(nn.Module):
+class OutConv(nn.Module):
     def __init__(self, in_channels, out_channels):
-        super(OutputConvLayer, self).__init__()
+        super(OutConv, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
     def forward(self, x):
@@ -174,15 +174,15 @@ class generator(nn.Module):
         self.n_classes = n_classes
         self.bilinear = bilinear
 
-        self.inc = DualConvLayer(n_channels, 64)
-        self.down1 = DownscaleLayer(64, 128)
-        self.down2 = DownscaleLayer(128, 256)
-        self.down3 = DownscaleLayer(256, 512)
-        self.down4 = DownscaleLayer(512, 512)
-        self.up1 = UpscaleLayer(1024, 256, bilinear)
-        self.up2 = UpscaleLayer(512, 128, bilinear)
-        self.up3 = UpscaleLayer(256, 64, bilinear)
-        self.up4 = UpscaleLayer(128, 64, bilinear)
+        self.inc = DoubleConv(n_channels, 64)
+        self.down1 = Down(64, 128)
+        self.down2 = Down(128, 256)
+        self.down3 = Down(256, 512)
+        self.down4 = Down(512, 512)
+        self.up1 = Up(1024, 256, bilinear)
+        self.up2 = Up(512, 128, bilinear)
+        self.up3 = Up(256, 64, bilinear)
+        self.up4 = Up(128, 64, bilinear)
         self.dilation=nn.Sequential(
           nn.Conv2d(512,512,3,1,2, dilation=2),
           nn.BatchNorm2d(512),
@@ -194,11 +194,11 @@ class generator(nn.Module):
           nn.BatchNorm2d(512),
           nn.LeakyReLU(0.2),
           )
-        self.outw = OutputConvLayer(64, 3)
-        self.outa = OutputConvLayer(64, 1)
-        self.out_mask = OutputConvLayer(64, 1)
+        self.outw = OutConv(64, 3)
+        self.outa = OutConv(64, 1)
+        self.out_mask = OutConv(64, 1)
         self.sg=nn.Sigmoid()
-        self.other=OutputConvLayer(64, 64)
+        self.other=OutConv(64, 64)
         self.post_process_1=nn.Sequential(
           nn.Conv2d(64+6, 64, 3, 1, 1),
           nn.BatchNorm2d(64),
