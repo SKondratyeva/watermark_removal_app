@@ -1,0 +1,14 @@
+<style>
+	body {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		height: 100vh;
+		margin: 0;
+	}
+</style>
+
+  {{data.page}}
+
+<img src="data:image/jpeg;base64, {{data.img}}" alt="Original Image">

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remove watermarks from images</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .custom-file-label {
+            cursor: pointer;
+        }
+
+        .image-preview {
+            max-height: 300px;
+            margin-top: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+
+    <div class="container text-center">
+        <h1 class="mb-4">Remove watermarks from images</h1>
+        <form action="/submitform" method="post" enctype="multipart/form-data">
+            <div class="custom-file mb-3">
+                <input type="file" class="custom-file-input" id="file" name="image_upload" accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps" onchange="previewImage()">
+                <label class="custom-file-label" for="file">Choose image...</label>
+            </div>
+            <button class="btn btn-success btn-lg mb-3" name="submit" type="submit">Upload File</button>
+
+            <!-- Image Preview Section -->
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Original Image</h5>
+                    <img src="data:image/jpeg;base64,{{ data.img_orig }}" alt="Original Image" class="image-preview img-fluid">
+                </div>
+                <div class="col-md-6">
+                    <h5>Processed Image</h5>
+                    <img src="data:image/jpeg;base64,{{ data.img_proc }}" alt="Processed Image" class="image-preview img-fluid">
+                </div>
+            </div>
+        </form>
+    </div>
+
+	<script>
+		function previewImage() {
+			const input = document.getElementById('file');
+			const inputImage = document.getElementById('inputImage');
+			const outputImage = document.getElementById('outputImage');
+			inputImage.innerHTML = '';
+			outputImage.innerHTML = '';
+
+			if (input.files && input.files[0]) {
+				const reader = new FileReader();
+				reader.onload = function(e) {
+					const img = new Image();
+					img.src = e.target.result;
+					inputImage.appendChild(img);
+
+					const formData = new FormData();
+					formData.append('inputImage', input.files[0]);
+					fetch('/submitform', {
+						method: 'POST',
+						body: formData
+					})
+					.then(response => response.blob())
+					.then(blob => {
+						const url = URL.createObjectURL(blob);
+						const outputImg = new Image();
+						outputImg.src = url;
+						outputImage.appendChild(outputImg);
+					});
+				};
+				reader.readAsDataURL(input.files[0]);
+			}
+		}
+	</script>
+
+    <!-- Optional Bootstrap JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+
+</html>

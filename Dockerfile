@@ -1,25 +1,16 @@
-FROM python:3.10
-RUN pip install python-multipart
-RUN pip install uvicorn
-RUN pip install Jinja2
-RUN pip install fastapi
-RUN pip install pandas
-RUN pip install numpy
-RUN pip install pillow
-RUN pip install torch
-RUN pip install asyncpg
-RUN pip install psycopg2-binary
-RUN pip install python-dotenv
-RUN pip install asyncpg
-RUN pip install python-dotenv
-RUN pip install pydantic
-RUN pip install huey
-RUN pip install redis
-RUN pip install prometheus-fastapi-instrumentator
-
+FROM python:3.9-slim
 
 WORKDIR /app
-COPY ./app /app
-EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8888"]
+# copy only the requirements.txt first to leverage Docker cache
+COPY ./app/requirements.txt /app/requirements.txt
+
+#install the libraries
+RUN pip install -r /app/requirements.txt
+
+# copy the rest of the application
+COPY ./app /app
+
+EXPOSE 8888
+
+CMD ["uvicorn", "main:fastapi_app", "--host", "0.0.0.0", "--port", "8888"]

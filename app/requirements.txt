@@ -1,0 +1,15 @@
+python-multipart
+uvicorn
+Jinja2
+fastapi
+pandas
+numpy
+pillow
+torch
+torchvision
+asyncpg
+psycopg2-binary
+python-dotenv
+pydantic
+huey
+redis

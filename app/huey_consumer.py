@@ -1,10 +1,7 @@
-#!C:\Users\sofya\uni\diploma\big_data2\big_data_project_checkpoint3\app\venv\Scripts\python.exe
 
 import logging
 import os
 import sys
-
-from huey.consumer import Consumer
 from huey.consumer_options import ConsumerConfig
 from huey.consumer_options import OptionParserHandler
 from huey.utils import load_class

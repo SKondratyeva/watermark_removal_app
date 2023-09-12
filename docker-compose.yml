@@ -5,15 +5,6 @@ services:
     build: .
     ports:
       - "8080:8888"
-  db:
-    image: postgres:latest
-    environment:
-      - POSTRES_USER=zqoxqsij
-      - POSTGRES_PASSWORD=sa8Mrsk9cgK35RlEDKwDrUccVLbRr3nv
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-db:/data/postgres
   worker:
     build: .
     command: ["python", "huey_consumer.py", "main.huey"]
@@ -29,39 +20,6 @@ services:
     volumes:
       - redis-data:/data
       - redis-conf:/usr/local/etc/redis/redis.conf
-  grafana:
-    image: grafana/grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=grafana
-    volumes:
-      - ./grafana:/etc/grafana/provisioning/datasources
-      - ./grafana/dashboards:/var/lib/grafana/dashboards
-
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus:/etc/prometheus
-      - prom_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-
-  postgres-exporter:
-    image: prometheuscommunity/postgres-exporter
-    ports:
-      - "9187:9187"
-    environment:
-      DATA_SOURCE_NAME: "postgres://zqoxqsij:sa8Mrsk9cgK35RlEDKwDrUccVLbRr3nv@drona.db.elephantsql.com/zqoxqsij"
-    links:
-      - db
-      - prometheus
 volumes:
-  postgres-db:
   redis-data:
   redis-conf:
-  prom_data:
